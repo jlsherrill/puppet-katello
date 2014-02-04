@@ -58,7 +58,17 @@ class katello (
     deployment_url    => 'katello',
     keystore_password => $::certs::candlepin_keystore_password,
     before            => Exec['foreman-rake-db:seed']
-  }
+  } ~>
+  class { '::certs::pulp_parent': } ~>
+  class { 'pulp':
+    oauth_key         => $katello::oauth_key,
+    oauth_secret      => $katello::oauth_secret,
+    messaging_url     => 'ssl://localhost:5671',
+    before            => Exec['foreman-rake-db:seed'],
+    consumers_ca_cert => $certs::candlepin::ca_cert,
+    consumers_ca_key  =>  $certs::candlepin::ca_key,
+    consumers_crl     => $candlepin::crl_file
+  } 
 
   class{ 'elasticsearch':
     before         => Exec['foreman-rake-db:seed']
